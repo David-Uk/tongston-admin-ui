@@ -2,6 +2,8 @@
 
 React + TypeScript + Vite frontend for the T-World Module Service, built to `../design-system.md`. It uses Tailwind's default palette, Inter for UI text and JetBrains Mono for hashes/amounts; all UI components live in `src/components/ui/`.
 
+Deployed at https://tongston-admin-ui.vercel.app (connected to this repository for automatic deployments).
+
 ## Setup
 
 ```bash
