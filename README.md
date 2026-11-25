@@ -1,75 +1,50 @@
-# React + TypeScript + Vite
+# T-World admin UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite frontend for the T-World Module Service, built to `../design-system.md`. It uses Tailwind's default palette, Inter for UI text and JetBrains Mono for hashes/amounts; all UI components live in `src/components/ui/`.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+cd client
+pnpm install
+cp .env.example .env
+pnpm dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+`VITE_API_URL` points at the backend (default `http://localhost:4000`). Start the API from `../server` first:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+cd ../server
+npm run seed   # optional: admin@example.com / Admin@12345, user1@example.com / User@12345
+npm run dev
 ```
+
+## Scripts
+
+| Command | Purpose |
+|---|---|
+| `pnpm dev` | Vite dev server with hot reload |
+| `pnpm build` | Type-check and build to `dist/` |
+| `pnpm lint` | ESLint |
+| `pnpm preview` | Serve the production build locally |
+
+## Routes
+
+| Path | Screen | Access |
+|---|---|---|
+| `/login` | Sign in / register | public |
+| `/content` | Content search, tag filter, pagination, summarize modal | auth |
+| `/ai-runs` | AI run status, latency, tokens, expandable output | auth |
+| `/tokens` | Balance, ledger history, convert form, withdrawals | auth |
+| `/media` | Cloudinary upload modal and mock-S3 promotion | auth |
+| `/admin` | Users with balances and per-user ledger | admin |
+
+## How it works
+
+- `src/api/client.ts` is the single API client: it attaches `Authorization: Bearer <token>`, parses the standard error envelope (`code`, `message`, `requestId`), and exposes one method per backend endpoint.
+- `src/auth/AuthContext.tsx` restores the session from a `tw_token` cookie (`Path=/`, `SameSite=Lax`, `Secure` on HTTPS, 1-hour lifetime). The JWT is never written to `localStorage` or `sessionStorage`; signing out clears the cookie. It refreshes the balance after rewarded actions.
+- `src/hooks/useAsync.ts` gives every data screen loading, error, empty and retry states; skeletons are used instead of blank pages.
+- The sidebar is role-aware: the Admin link only appears for `admin` users, and `/admin` is guarded by `ProtectedRoute admin`.
+- Convert and withdraw send a fresh `Idempotency-Key`. The convert form previews the rate using the server defaults (100 tokens → 1 MOCK_USDT; 20,000 → 1 MOCK_ETH).
+
+For the full API contract see `../api.md`; the interactive reference is at `http://localhost:4000/docs` (or `/swagger`).
